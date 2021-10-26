@@ -140,7 +140,7 @@ public class Gadgets {
 //        if (command.length() > 1000) {
 //            cmd = command;
 //        }//end//todo: 优化代码
-        cmd = new String(Base64.getDecoder().decode(command.getBytes()));
+//        cmd = new String(Base64.getDecoder().decode(command.getBytes()));
         System.out.println("cmd:"+cmd);
         clazz.makeClassInitializer().insertAfter(cmd);
         // sortarandom name to allow repeated exploitation (watch out for PermGen exhaustion)

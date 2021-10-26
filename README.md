@@ -1,3 +1,10 @@
+# yso payload添加
+
+cc10(cc6前半+cc2后半)
+cc11(cc6前半+cc3后半)
+ccDoubleUnser(cc6前半+RMIConnector)(解决数组问题)
+ccURL(cc6前半+URL)(利用file://和报错盲注文件内容)
+
 # 内存马使用
 
 实现两个功能
